@@ -10,9 +10,7 @@ import numpy as np
 app = Flask(__name__)
 CORS (app,origins=["http://localhost:8080"],supports_credentials=True)
 
-# Carregar os dados do CSV
 df = pd.read_csv('dados.csv', sep=';', encoding='utf-8')
-
 
 df['search_text'] = df.apply(lambda row: ' '.join([
     str(row['Razao_Social']),
@@ -22,28 +20,21 @@ df['search_text'] = df.apply(lambda row: ' '.join([
     str(row['Modalidade'])
 ]).lower(), axis=1)
 
-
 @app.route('/busca', methods=['GET'])
 def buscar_operadoras():
     termo = request.args.get('q', '').lower()
     if not termo:
         return jsonify({"error": "Parâmetro 'q' é obrigatório"}), 400
 
-
     limite = int(request.args.get('limit', 10))
-
 
     def calcular_relevancia(texto):
 
         if termo in texto:
             return 100
-
-
         return fuzz.partial_ratio(termo, texto)
 
-
     df['relevancia'] = df['search_text'].apply(calcular_relevancia)
-
 
     resultados = df[df['relevancia'] > 50].sort_values('relevancia', ascending=False).head(limite)
 
